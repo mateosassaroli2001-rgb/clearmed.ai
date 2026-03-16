@@ -1465,5 +1465,20 @@
     showStep('stepUpload');
   }
 </script>
+<script>
+async function analizarEstudio(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch("/api/analyze", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await res.json();
+  console.log(data);
+  return data;
+}
+</script>
 </body>
 </html>
