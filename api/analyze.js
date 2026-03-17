@@ -1,95 +1,24 @@
-// ============================================================
-// ClearMed AI — /api/analyze.js
-// Versión corregida para Vercel Serverless
-// Soporta: PDF, JPG, PNG via multipart/form-data
-// ============================================================
-
 import Anthropic from "@anthropic-ai/sdk";
-import { IncomingForm } from "formidable";
+import formidable from "formidable";
 import fs from "fs";
 import path from "path";
 
-// ⚠️ CRÍTICO: Deshabilitar el body parser de Next.js/Vercel
-// Sin esto, el stream del request se consume antes de que formidable pueda leerlo
 export const config = {
   api: {
     bodyParser: false,
   },
 };
 
-// Tipos MIME permitidos
-const ALLOWED_TYPES = {
-  "application/pdf": "document",
-  "image/jpeg": "image",
-  "image/jpg": "image",
-  "image/png": "image",
-  "image/gif": "image",
-  "image/webp": "image",
+const SUPPORTED_TYPES = {
+  "image/jpeg": { type: "image", mediaType: "image/jpeg" },
+  "image/png": { type: "image", mediaType: "image/png" },
+  "image/gif": { type: "image", mediaType: "image/gif" },
+  "image/webp": { type: "image", mediaType: "image/webp" },
+  "application/pdf": { type: "document", mediaType: "application/pdf" },
 };
 
-// Tamaño máximo: 4MB (límite de Vercel es 4.5MB, dejamos margen)
-const MAX_FILE_SIZE = 4 * 1024 * 1024;
-
-// ── Helpers ──────────────────────────────────────────────────
-
-/**
- * Parsea el multipart/form-data usando formidable
- * Devuelve { fields, files }
- */
-function parseForm(req) {
-  return new Promise((resolve, reject) => {
-    const form = new IncomingForm({
-      maxFileSize: MAX_FILE_SIZE,
-      keepExtensions: true,
-      // En Vercel el /tmp es el único directorio escribible
-      uploadDir: "/tmp",
-    });
-
-    form.parse(req, (err, fields, files) => {
-      if (err) {
-        console.error("[ClearMed] ❌ Error al parsear el form:", err.message);
-        reject(err);
-      } else {
-        resolve({ fields, files });
-      }
-    });
-  });
-}
-
-/**
- * Construye el bloque de contenido correcto para la API de Anthropic
- * según el tipo de archivo.
- */
-function buildContentBlock(fileBuffer, mimeType) {
-  const base64Data = fileBuffer.toString("base64");
-
-  if (mimeType === "application/pdf") {
-    // PDFs → type: "document" con source base64
-    return {
-      type: "document",
-      source: {
-        type: "base64",
-        media_type: "application/pdf",
-        data: base64Data,
-      },
-    };
-  }
-
-  // Imágenes → type: "image"
-  return {
-    type: "image",
-    source: {
-      type: "base64",
-      media_type: mimeType,
-      data: base64Data,
-    },
-  };
-}
-
-// ── Handler principal ─────────────────────────────────────────
-
 export default async function handler(req, res) {
-  // ── CORS ──
+  // CORS headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -99,195 +28,149 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método no permitido. Usá POST." });
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  console.log("[ClearMed] 📥 Nueva solicitud recibida");
-  console.log("[ClearMed] Content-Type:", req.headers["content-type"]);
-
-  // ── 1. Validar API Key ──────────────────────────────────────
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    console.error("[ClearMed] ❌ ANTHROPIC_API_KEY no está definida en las variables de entorno de Vercel.");
-    return res.status(500).json({
-      error: "Error de configuración del servidor. Contactá al administrador.",
-      debug: "Missing ANTHROPIC_API_KEY",
-    });
-  }
-  console.log("[ClearMed] ✅ API Key presente (primeros 8 chars):", apiKey.substring(0, 8) + "...");
-
-  // ── 2. Parsear el archivo ───────────────────────────────────
-  let filePath, mimeType, fileName;
+  let filePath = null;
 
   try {
-    const { files } = await parseForm(req);
+    // Parse multipart form data
+    const form = formidable({
+      maxFileSize: 20 * 1024 * 1024, // 20MB
+      keepExtensions: true,
+    });
 
-    console.log("[ClearMed] 📂 Archivos recibidos:", JSON.stringify(Object.keys(files)));
+    const [, files] = await form.parse(req);
 
-    // El campo puede llamarse "file", "archivo", "pdf", etc.
-    // Buscamos el primero que exista
-    const fileEntry = files.file || files.archivo || files.pdf || files.image || Object.values(files)[0];
+    const fileArray = files.file;
+    if (!fileArray || fileArray.length === 0) {
+      return res.status(400).json({ error: "No se recibió ningún archivo." });
+    }
 
-    if (!fileEntry) {
-      console.error("[ClearMed] ❌ No se encontró ningún archivo en el form.");
+    const file = fileArray[0];
+    filePath = file.filepath;
+    const mimeType = file.mimetype || "";
+
+    console.log(`[analyze] File received: ${file.originalFilename}, type: ${mimeType}, size: ${file.size}`);
+
+    // Validate file type
+    const supportedType = SUPPORTED_TYPES[mimeType];
+    if (!supportedType) {
       return res.status(400).json({
-        error: "No se recibió ningún archivo. Asegurate de enviar el campo 'file'.",
+        error: `Tipo de archivo no soportado: ${mimeType}. Sube un PDF o imagen (JPEG, PNG, WEBP, GIF).`,
       });
     }
 
-    // formidable v2+ devuelve arrays; tomamos el primer elemento
-    const file = Array.isArray(fileEntry) ? fileEntry[0] : fileEntry;
+    // Read file to buffer → base64
+    const fileBuffer = fs.readFileSync(filePath);
+    const base64Data = fileBuffer.toString("base64");
 
-    filePath = file.filepath || file.path;
-    mimeType = file.mimetype || file.type;
-    fileName = file.originalFilename || file.name || "archivo";
+    console.log(`[analyze] File read OK. Base64 length: ${base64Data.length}`);
 
-    console.log("[ClearMed] 📄 Archivo:", fileName);
-    console.log("[ClearMed] 📄 MIME type:", mimeType);
-    console.log("[ClearMed] 📄 Tamaño:", file.size, "bytes");
+    // Init Anthropic client
+    const client = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
 
-    if (!ALLOWED_TYPES[mimeType]) {
-      console.error("[ClearMed] ❌ Tipo de archivo no soportado:", mimeType);
-      return res.status(400).json({
-        error: `Tipo de archivo no soportado: ${mimeType}. Usá PDF, JPG o PNG.`,
-      });
+    // Build message content
+    let contentBlocks;
+
+    if (supportedType.type === "image") {
+      contentBlocks = [
+        {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: supportedType.mediaType,
+            data: base64Data,
+          },
+        },
+        {
+          type: "text",
+          text: `Eres un médico especialista con gran capacidad de comunicación. El usuario te ha enviado un estudio médico (imagen o PDF).
+
+Tu tarea:
+1. Identificá qué tipo de estudio es (análisis de sangre, radiografía, ecografía, etc.)
+2. Explicá los resultados en lenguaje simple y claro, como si le hablaras a alguien sin conocimientos médicos
+3. Indicá qué valores o hallazgos son normales y cuáles podrían requerir atención
+4. Cerrá con una recomendación general (sin reemplazar la consulta médica)
+
+Sé empático, claro y ordenado. Usá viñetas cuando sea útil. No uses términos técnicos sin explicarlos.`,
+        },
+      ];
+    } else {
+      // PDF
+      contentBlocks = [
+        {
+          type: "document",
+          source: {
+            type: "base64",
+            media_type: "application/pdf",
+            data: base64Data,
+          },
+        },
+        {
+          type: "text",
+          text: `Eres un médico especialista con gran capacidad de comunicación. El usuario te ha enviado un estudio médico en PDF.
+
+Tu tarea:
+1. Identificá qué tipo de estudio es (análisis de sangre, radiografía, informe médico, etc.)
+2. Explicá los resultados en lenguaje simple y claro, como si le hablaras a alguien sin conocimientos médicos
+3. Indicá qué valores o hallazgos son normales y cuáles podrían requerir atención
+4. Cerrá con una recomendación general (sin reemplazar la consulta médica)
+
+Sé empático, claro y ordenado. Usá viñetas cuando sea útil. No uses términos técnicos sin explicarlos.`,
+        },
+      ];
     }
 
-    if (file.size > MAX_FILE_SIZE) {
-      console.error("[ClearMed] ❌ Archivo demasiado grande:", file.size);
-      return res.status(400).json({
-        error: "El archivo supera el límite de 4MB.",
-      });
-    }
-  } catch (err) {
-    console.error("[ClearMed] ❌ Error al parsear el archivo:", err.message);
-    return res.status(400).json({
-      error: "No se pudo leer el archivo enviado. Verificá el formato.",
-      debug: err.message,
-    });
-  }
+    console.log("[analyze] Calling Claude API...");
 
-  // ── 3. Leer el buffer del archivo ──────────────────────────
-  let fileBuffer;
-  try {
-    fileBuffer = fs.readFileSync(filePath);
-    console.log("[ClearMed] ✅ Buffer leído correctamente:", fileBuffer.length, "bytes");
-  } catch (err) {
-    console.error("[ClearMed] ❌ No se pudo leer el archivo temporal:", err.message);
-    return res.status(500).json({
-      error: "Error interno al procesar el archivo.",
-      debug: err.message,
-    });
-  }
-
-  // ── 4. Construir el mensaje para Claude ────────────────────
-  const contentBlock = buildContentBlock(fileBuffer, mimeType);
-
-  const systemPrompt = `Sos un asistente médico educativo especializado en explicar estudios y análisis clínicos en lenguaje simple y accesible para pacientes sin formación médica. Tu objetivo es ayudar a las personas a entender sus resultados de salud.
-
-IMPORTANTE:
-- Explicá cada valor o hallazgo en lenguaje cotidiano, sin jerga médica innecesaria.
-- Indicá si cada valor está dentro del rango normal o si se desvía, y qué significa eso en términos simples.
-- Nunca hagas diagnósticos ni recomendés tratamientos específicos.
-- Siempre recordá al usuario que consulte con su médico de cabecera.
-- Formulá entre 3 y 5 preguntas concretas que el paciente podría llevar a su próxima consulta médica.
-- Respondé siempre en español, de manera empática y clara.`;
-
-  const userMessage = {
-    role: "user",
-    content: [
-      contentBlock,
-      {
-        type: "text",
-        text: `Por favor, analizá este estudio médico y explicalo en lenguaje simple y comprensible para un paciente sin formación médica. 
-
-Incluí:
-1. Un resumen general del estudio en 2-3 oraciones.
-2. Explicación de cada valor o hallazgo relevante, indicando si está dentro del rango normal.
-3. Qué podría significar para la salud del paciente, en términos simples.
-4. Entre 3 y 5 preguntas útiles para llevar a la próxima consulta médica.
-
-Recordá al final que esta explicación es orientativa y no reemplaza la consulta médica profesional.`,
-      },
-    ],
-  };
-
-  // ── 5. Llamar a Claude ─────────────────────────────────────
-  console.log("[ClearMed] 🧠 Enviando a Claude...");
-
-  let claudeResponse;
-  try {
-    const client = new Anthropic({ apiKey });
-
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514", // ← Modelo activo y soportado
+    const message = await client.messages.create({
+      model: "claude-opus-4-5",
       max_tokens: 2048,
-      system: systemPrompt,
-      messages: [userMessage],
+      messages: [
+        {
+          role: "user",
+          content: contentBlocks,
+        },
+      ],
     });
 
-    console.log("[ClearMed] ✅ Respuesta de Claude recibida");
-    console.log("[ClearMed] Stop reason:", response.stop_reason);
-    console.log("[ClearMed] Tokens usados:", response.usage);
+    console.log("[analyze] Claude response received. Stop reason:", message.stop_reason);
 
-    // Extraer el texto de la respuesta
-    claudeResponse = response.content
+    const analysisText = message.content
       .filter((block) => block.type === "text")
       .map((block) => block.text)
       .join("\n");
 
-    if (!claudeResponse || claudeResponse.trim() === "") {
-      throw new Error("Claude devolvió una respuesta vacía.");
-    }
-  } catch (err) {
-    console.error("[ClearMed] ❌ Error al llamar a Claude:");
-    console.error("  Mensaje:", err.message);
-    console.error("  Status:", err.status);
-    console.error("  Error type:", err.error?.type);
+    return res.status(200).json({ analysis: analysisText });
 
-    // Errores específicos de Anthropic
-    if (err.status === 401) {
-      return res.status(500).json({
-        error: "Error de autenticación con la IA. Verificá la API Key en Vercel.",
-        debug: "Invalid API Key",
+  } catch (err) {
+    console.error("[analyze] ERROR:", err);
+
+    // Anthropic API errors
+    if (err?.status && err?.error) {
+      return res.status(502).json({
+        error: `Error de la API de Claude: ${err.error?.error?.message || err.message}`,
       });
     }
-    if (err.status === 429) {
-      return res.status(429).json({
-        error: "Demasiadas solicitudes. Por favor esperá unos segundos e intentá de nuevo.",
-        debug: "Rate limit exceeded",
-      });
-    }
-    if (err.status === 413 || err.message?.includes("too large")) {
-      return res.status(400).json({
-        error: "El archivo es demasiado grande para ser procesado. Intentá con un archivo más pequeño.",
-        debug: "File too large for Claude",
-      });
+
+    // Formidable errors
+    if (err.code === 1009) {
+      return res.status(413).json({ error: "El archivo es demasiado grande. Máximo 20MB." });
     }
 
     return res.status(500).json({
-      error: "Error al procesar el análisis. Por favor intentá de nuevo.",
-      debug: err.message,
+      error: `Error interno del servidor: ${err.message || "Error desconocido"}`,
     });
   } finally {
-    // Limpiar el archivo temporal
-    try {
-      if (filePath && fs.existsSync(filePath)) {
+    // Clean up temp file
+    if (filePath) {
+      try {
         fs.unlinkSync(filePath);
-        console.log("[ClearMed] 🗑️ Archivo temporal eliminado");
-      }
-    } catch (cleanupErr) {
-      console.warn("[ClearMed] ⚠️ No se pudo eliminar el archivo temporal:", cleanupErr.message);
+        console.log("[analyze] Temp file deleted.");
+      } catch (_) {}
     }
   }
-
-  // ── 6. Devolver respuesta al frontend ──────────────────────
-  console.log("[ClearMed] ✅ Enviando respuesta al frontend");
-
-  return res.status(200).json({
-    success: true,
-    analysis: claudeResponse,
-    fileName: fileName,
-  });
-}  
-
+}
