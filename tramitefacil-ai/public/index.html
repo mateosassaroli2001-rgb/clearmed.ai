@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrámiteFácil AI — Documentos legales listos en minutos</title>
+<style>
+  :root {
+    --bg: #f7f8fb;
+    --card: #ffffff;
+    --ink: #1a1f36;
+    --muted: #5c6478;
+    --accent: #2451ff;
+    --accent-dark: #1638c9;
+    --border: #e3e6ef;
+    --ok: #1a9e5c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  header.hero {
+    padding: 64px 20px 48px;
+    text-align: center;
+    background: linear-gradient(180deg, #eef1ff 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { font-weight: 800; font-size: 1.1rem; color: var(--accent); letter-spacing: -0.02em; }
+  h1 { font-size: 2.1rem; margin: 14px auto 10px; max-width: 700px; letter-spacing: -0.02em; }
+  header.hero p { color: var(--muted); max-width: 560px; margin: 0 auto; font-size: 1.05rem; }
+  main { max-width: 960px; margin: 0 auto; padding: 40px 20px 80px; }
+  h2 { font-size: 1.3rem; margin-bottom: 4px; }
+  .subtle { color: var(--muted); margin-top: 0; margin-bottom: 24px; font-size: 0.95rem; }
+
+  #docGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+  .doc-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .doc-card:hover { border-color: var(--accent); box-shadow: 0 2px 10px rgba(36,81,255,0.08); }
+  .doc-card.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(36,81,255,0.12); }
+  .doc-card .title { font-weight: 700; margin-bottom: 6px; }
+  .doc-card .desc { color: var(--muted); font-size: 0.9rem; margin-bottom: 10px; }
+  .doc-card .price { color: var(--accent); font-weight: 700; font-size: 0.95rem; }
+
+  #formSection {
+    display: none;
+    margin-top: 40px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+  }
+  #formSection.visible { display: block; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 6px; }
+  .field .hint { font-weight: 400; color: var(--muted); }
+  .field input, .field textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #fbfcfe;
+  }
+  .field textarea { min-height: 80px; resize: vertical; }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+  #errorBox {
+    display: none;
+    background: #fff1f0;
+    border: 1px solid #ffccc7;
+    color: #a8071a;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+  }
+
+  button.cta {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 14px 22px;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+  }
+  button.cta:hover { background: var(--accent-dark); }
+  button.cta:disabled { opacity: 0.6; cursor: not-allowed; }
+  button.link-back {
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 0.9rem; margin-bottom: 18px; padding: 0;
+  }
+
+  .demo-banner {
+    background: #fff7e0; border: 1px solid #ffe08a; color: #7a5c00;
+    padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 24px;
+    display: none;
+  }
+
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 24px 20px 40px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="brand">✦ TrámiteFácil AI</div>
+  <h1>Generá contratos y cartas legales listas para firmar, en minutos</h1>
+  <p>Elegí el documento que necesitás, completá tus datos y descargá el PDF. Sin turnos, sin esperar a un gestor.</p>
+</header>
+
+<main>
+  <div id="demoBanner" class="demo-banner">
+    Modo demo activo: la generación es gratis para probar (todavía no está configurado el cobro).
+  </div>
+
+  <div id="errorBox"></div>
+
+  <section id="pickSection">
+    <h2>¿Qué documento necesitás?</h2>
+    <p class="subtle">Todos los modelos están redactados en base a tus datos, listos para imprimir y firmar.</p>
+    <div id="docGrid">Cargando documentos...</div>
+  </section>
+
+  <section id="formSection">
+    <button class="link-back" id="backBtn">&larr; Elegir otro documento</button>
+    <h2 id="formTitle"></h2>
+    <p class="subtle" id="formDesc"></p>
+    <form id="docForm"></form>
+    <button class="cta" id="submitBtn" type="button">Generar mi documento</button>
+  </section>
+</main>
+
+<footer>
+  TrámiteFácil AI genera modelos orientativos con inteligencia artificial. No reemplazan el asesoramiento de un abogado matriculado.
+</footer>
+
+<script>
+let TEMPLATES = [];
+let SELECTED = null;
+let DEMO_MODE = false;
+
+const docGrid = document.getElementById('docGrid');
+const pickSection = document.getElementById('pickSection');
+const formSection = document.getElementById('formSection');
+const docForm = document.getElementById('docForm');
+const formTitle = document.getElementById('formTitle');
+const formDesc = document.getElementById('formDesc');
+const submitBtn = document.getElementById('submitBtn');
+const errorBox = document.getElementById('errorBox');
+const demoBanner = document.getElementById('demoBanner');
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.style.display = 'block';
+  errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function clearError() {
+  errorBox.style.display = 'none';
+}
+
+function formatPrice(cents) {
+  return '$' + (cents / 100).toFixed(2) + ' USD';
+}
+
+async function loadTemplates() {
+  try {
+    const res = await fetch('/api/templates');
+    const data = await res.json();
+    TEMPLATES = data.templates;
+    DEMO_MODE = data.demoMode;
+    if (DEMO_MODE) demoBanner.style.display = 'block';
+    renderGrid();
+  } catch (err) {
+    docGrid.textContent = 'No se pudieron cargar los documentos. Refrescá la página.';
+  }
+}
+
+function renderGrid() {
+  docGrid.innerHTML = '';
+  TEMPLATES.forEach((t) => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'doc-card';
+    card.innerHTML = `
+      <div class="title">${t.label}</div>
+      <div class="desc">${t.description}</div>
+      <div class="price">${formatPrice(t.priceUsdCents)}</div>
+    `;
+    card.addEventListener('click', () => selectTemplate(t));
+    docGrid.appendChild(card);
+  });
+}
+
+function selectTemplate(t) {
+  SELECTED = t;
+  clearError();
+  pickSection.style.display = 'none';
+  formSection.classList.add('visible');
+  formTitle.textContent = t.label;
+  formDesc.textContent = t.description + ' — ' + formatPrice(t.priceUsdCents);
+  docForm.innerHTML = '';
+  t.fields.forEach((f) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'field';
+    const label = document.createElement('label');
+    label.innerHTML = f.label + (f.required ? '' : ' <span class="hint">(opcional)</span>');
+    wrap.appendChild(label);
+    let input;
+    if (f.type === 'textarea') {
+      input = document.createElement('textarea');
+    } else {
+      input = document.createElement('input');
+      input.type = f.type === 'date' ? 'date' : 'text';
+    }
+    input.name = f.name;
+    input.dataset.required = f.required ? '1' : '0';
+    wrap.appendChild(input);
+    docForm.appendChild(wrap);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  formSection.classList.remove('visible');
+  pickSection.style.display = 'block';
+  SELECTED = null;
+  clearError();
+});
+
+submitBtn.addEventListener('click', async () => {
+  clearError();
+  if (!SELECTED) return;
+
+  const fields = {};
+  const inputs = docForm.querySelectorAll('input, textarea');
+  let missing = [];
+  inputs.forEach((el) => {
+    fields[el.name] = el.value.trim();
+    if (el.dataset.required === '1' && !el.value.trim()) {
+      missing.push(el.previousElementSibling ? el.previousElementSibling.textContent : el.name);
+    }
+  });
+  if (missing.length) {
+    showError('Completá los campos obligatorios antes de continuar.');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Preparando...';
+
+  try {
+    const res = await fetch('/api/create-checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ docType: SELECTED.id, fields }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showError(data.error || 'Ocurrió un error. Probá de nuevo.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Generar mi documento';
+      return;
+    }
+    window.location.href = data.demo ? data.redirect : data.url;
+  } catch (err) {
+    showError('No se pudo conectar con el servidor. Probá de nuevo.');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Generar mi documento';
+  }
+});
+
+loadTemplates();
+</script>
+
+</body>
+</html>
