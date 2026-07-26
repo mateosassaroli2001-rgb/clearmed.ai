@@ -40,16 +40,26 @@ function renderSite(wedding, { preview = false, banner = '' } = {}) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(nombre)} — Nuestro casamiento</title>
 <link rel="stylesheet" href="${theme.css}">
+<style>
+  .hero { cursor: none; }
+  @media (pointer: coarse) { .hero { cursor: auto; } }
+  #ambientCanvas { position: absolute; inset: -10%; width: 120%; height: 120%; z-index: 1; pointer-events: none; }
+  .hero-content { position: relative; z-index: 2; }
+  .hero-names span.reveal { display: inline-block; }
+</style>
 </head>
 <body class="theme-${theme.id}">
 ${banner || (preview ? '<div class="preview-banner">Vista previa — esta web todavía no está publicada</div>' : '')}
 
 <header class="hero">
+  <canvas id="ambientCanvas"></canvas>
   <div class="hero-content">
     <p class="eyebrow reveal">Nos casamos</p>
-    <h1 class="hero-names reveal">${esc(wedding.novio1)}<span class="amp">&amp;</span>${esc(wedding.novio2)}</h1>
-    <p class="hero-date reveal">${esc(formatFechaLarga(fechaISO))}</p>
-    <div class="countdown reveal" data-fecha="${esc(fechaISO)}" data-hora="${esc(wedding.hora || '00:00')}">
+    <h1 class="hero-names">
+      <span class="reveal" style="transition-delay:0ms">${esc(wedding.novio1)}</span><span class="amp reveal" style="transition-delay:150ms">&amp;</span><span class="reveal" style="transition-delay:300ms">${esc(wedding.novio2)}</span>
+    </h1>
+    <p class="hero-date reveal" style="transition-delay:420ms">${esc(formatFechaLarga(fechaISO))}</p>
+    <div class="countdown reveal" style="transition-delay:540ms" data-fecha="${esc(fechaISO)}" data-hora="${esc(wedding.hora || '00:00')}">
       <div class="countdown-item"><span class="num" data-unit="dias">--</span><span class="label">días</span></div>
       <div class="countdown-item"><span class="num" data-unit="horas">--</span><span class="label">hs</span></div>
       <div class="countdown-item"><span class="num" data-unit="min">--</span><span class="label">min</span></div>
@@ -104,8 +114,21 @@ ${wedding.regalos ? `
 
 <footer class="site-footer">Hecho con Confeti 🎉</footer>
 
+<script src="/js/site-fx.js"></script>
 <script>
 (function () {
+  var ambientCanvas = document.getElementById('ambientCanvas');
+  if (ambientCanvas && window.SiteFX) {
+    SiteFX.initAmbientCanvas(ambientCanvas, Object.assign({
+      rangeW: innerWidth * 1.2, rangeH: innerHeight * 1.2, parallax: 20,
+    }, ${JSON.stringify(theme.ambient)}));
+    SiteFX.initCursor({ color: '${theme.cursorColor}' });
+    SiteFX.initScrollParallax('#ambientCanvas', 0.15);
+  }
+  if (window.SiteFX) {
+    SiteFX.initMagnetic('.rsvp-btn', { strength: 0.25, radius: 50 });
+  }
+
   var el = document.querySelector('.countdown');
   if (el) {
     var target = new Date(el.dataset.fecha + 'T' + el.dataset.hora + ':00');
