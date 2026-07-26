@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crear mi web — Confeti</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700&family=Inter:wght@300;400;500;700&display=swap');
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'Inter', sans-serif; background: #0d0b12; color: #f3f0f5; min-height: 100vh;
+  }
+  a.brand-link { display: block; text-align: center; padding: 26px 20px 0; color: #f3f0f5; text-decoration: none; font-weight: 800; }
+  a.brand-link span { color: #e2a58f; }
+
+  main { max-width: 640px; margin: 0 auto; padding: 20px 20px 100px; }
+
+  .progress { display: flex; gap: 6px; margin: 30px 0 34px; }
+  .progress-dot { height: 4px; flex: 1; border-radius: 4px; background: rgba(255,255,255,0.12); transition: background 0.3s ease; }
+  .progress-dot.done { background: #e2a58f; }
+
+  .card { background: #17131d; border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 34px; }
+  .card h2 { font-family: 'Playfair Display', serif; margin: 0 0 6px; font-size: 1.5rem; }
+  .card p.hint { color: #a89fb3; margin: 0 0 26px; font-size: 0.92rem; }
+
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-size: 0.88rem; font-weight: 600; margin-bottom: 6px; color: #d8d2df; }
+  .field .opt { color: #7a7285; font-weight: 400; }
+  .field input, .field textarea {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.14);
+    background: #0d0b12; color: #f3f0f5; font-family: inherit; font-size: 0.95rem;
+  }
+  .field input::placeholder, .field textarea::placeholder { color: #5c5468; }
+  .field textarea { min-height: 100px; resize: vertical; }
+  .field input:focus, .field textarea:focus { outline: none; border-color: #e2a58f; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .theme-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 14px; }
+  .theme-option {
+    border: 1.5px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 18px; cursor: pointer; text-align: left;
+    background: #0d0b12;
+  }
+  .theme-option.selected { border-color: #e2a58f; box-shadow: 0 0 0 3px rgba(226,165,143,0.15); }
+  .theme-option .swatches { display: flex; gap: 6px; margin-bottom: 12px; }
+  .theme-option .swatch { width: 22px; height: 22px; border-radius: 50%; }
+  .theme-option h4 { margin: 0 0 4px; font-size: 1rem; }
+  .theme-option p { margin: 0; color: #a89fb3; font-size: 0.82rem; }
+
+  .fotos-input { border: 1.5px dashed rgba(255,255,255,0.2); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; }
+  .fotos-input input { display: none; }
+  .fotos-preview { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px,1fr)); gap: 8px; margin-top: 14px; }
+  .fotos-preview img { width: 100%; height: 80px; object-fit: cover; border-radius: 8px; }
+
+  .slug-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .slug-prefix { color: #7a7285; font-size: 0.9rem; }
+  #slugStatus { font-size: 0.85rem; margin-top: 6px; }
+  #slugStatus.ok { color: #7fce9b; }
+  #slugStatus.taken { color: #e08f8f; }
+
+  .nav-buttons { display: flex; justify-content: space-between; margin-top: 30px; gap: 12px; }
+  button {
+    font-family: inherit; font-size: 0.95rem; font-weight: 700; padding: 13px 24px; border-radius: 999px;
+    border: none; cursor: pointer;
+  }
+  button.primary { background: #e2a58f; color: #2a1a15; }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.secondary { background: transparent; color: #f3f0f5; border: 1.5px solid rgba(255,255,255,0.2); }
+
+  #errorBox { display: none; background: rgba(224,143,143,0.12); border: 1px solid rgba(224,143,143,0.4); color: #f0b8b8; padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<a class="brand-link" href="/">✦ <span>Confeti</span></a>
+
+<main>
+  <div class="progress" id="progressBar"></div>
+  <div id="errorBox"></div>
+  <div class="card">
+    <div id="stepContainer"></div>
+    <div class="nav-buttons">
+      <button class="secondary" id="btnBack" type="button">Atrás</button>
+      <button class="primary" id="btnNext" type="button">Siguiente</button>
+    </div>
+  </div>
+</main>
+
+<script>
+let THEMES = [];
+let currentStep = 0;
+const totalSteps = 6;
+const state = {
+  theme: '', novio1: '', novio2: '', fecha: '', hora: '19:00',
+  lugarCeremonia: '', lugarFiesta: '', historiaBullets: '',
+  vestimenta: '', alojamiento: '', regalos: '', rsvpLimite: '',
+  slugDeseado: '', fotos: [],
+};
+
+const stepContainer = document.getElementById('stepContainer');
+const progressBar = document.getElementById('progressBar');
+const btnBack = document.getElementById('btnBack');
+const btnNext = document.getElementById('btnNext');
+const errorBox = document.getElementById('errorBox');
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.style.display = 'block';
+}
+function clearError() { errorBox.style.display = 'none'; }
+
+function renderProgress() {
+  progressBar.innerHTML = '';
+  for (let i = 0; i < totalSteps; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot' + (i <= currentStep ? ' done' : '');
+    progressBar.appendChild(dot);
+  }
+}
+
+function renderStep() {
+  clearError();
+  renderProgress();
+  btnBack.style.visibility = currentStep === 0 ? 'hidden' : 'visible';
+  btnNext.textContent = currentStep === totalSteps - 1 ? 'Ver mi vista previa' : 'Siguiente';
+
+  if (currentStep === 0) {
+    stepContainer.innerHTML = `
+      <h2>Elegí el estilo</h2>
+      <p class="hint">Después vas a poder ver la vista previa completa antes de decidir nada.</p>
+      <div class="theme-options" id="themeOptions">Cargando...</div>
+    `;
+    loadThemeOptions();
+  } else if (currentStep === 1) {
+    stepContainer.innerHTML = `
+      <h2>Datos básicos</h2>
+      <p class="hint">Lo esencial para armar el encabezado de la web.</p>
+      <div class="row2">
+        <div class="field"><label>Nombre 1</label><input id="novio1" placeholder="Ej: Lucía" value="${state.novio1}"></div>
+        <div class="field"><label>Nombre 2</label><input id="novio2" placeholder="Ej: Marco" value="${state.novio2}"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Fecha del casamiento</label><input id="fecha" type="date" value="${state.fecha}"></div>
+        <div class="field"><label>Hora <span class="opt">(opcional)</span></label><input id="hora" type="time" value="${state.hora}"></div>
+      </div>
+      <div class="field"><label>Lugar de la ceremonia</label><input id="lugarCeremonia" placeholder="Ej: Iglesia Nuestra Señora, Av. Siempre Viva 123" value="${state.lugarCeremonia}"></div>
+      <div class="field"><label>Lugar de la fiesta</label><input id="lugarFiesta" placeholder="Ej: Salón Jardín, Ruta 8 km 45" value="${state.lugarFiesta}"></div>
+    `;
+  } else if (currentStep === 2) {
+    stepContainer.innerHTML = `
+      <h2>Nuestra historia</h2>
+      <p class="hint">Contanos en pocas palabras cómo se conocieron. Nosotros lo convertimos en un texto lindo para la web.</p>
+      <div class="field">
+        <textarea id="historiaBullets" placeholder="Ej: nos conocimos en la facultad en 2018, en un cumpleaños de un amigo en común. Empezamos a salir un año después...">${state.historiaBullets}</textarea>
+      </div>
+    `;
+  } else if (currentStep === 3) {
+    stepContainer.innerHTML = `
+      <h2>Detalles adicionales</h2>
+      <p class="hint">Todos opcionales, pero le dan mucha más utilidad a la web.</p>
+      <div class="field"><label>Código de vestimenta <span class="opt">(opcional)</span></label><input id="vestimenta" placeholder="Ej: Elegante sport" value="${state.vestimenta}"></div>
+      <div class="field"><label>Alojamiento sugerido <span class="opt">(opcional)</span></label><input id="alojamiento" placeholder="Ej: Hotel X a 5 min del salón" value="${state.alojamiento}"></div>
+      <div class="field"><label>Mesa de regalos <span class="opt">(opcional)</span></label><input id="regalos" placeholder="Ej: Alias lucia.marco.mp" value="${state.regalos}"></div>
+      <div class="field"><label>Fecha límite para confirmar <span class="opt">(opcional)</span></label><input id="rsvpLimite" type="date" value="${state.rsvpLimite}"></div>
+    `;
+  } else if (currentStep === 4) {
+    stepContainer.innerHTML = `
+      <h2>Fotos</h2>
+      <p class="hint">Hasta 8 fotos para la galería. Opcional, pero recomendado.</p>
+      <label class="fotos-input">
+        <input type="file" id="fotosInput" accept="image/*" multiple>
+        Tocá para elegir fotos
+      </label>
+      <div class="fotos-preview" id="fotosPreview"></div>
+    `;
+    document.getElementById('fotosInput').addEventListener('change', handleFotos);
+    renderFotosPreview();
+  } else if (currentStep === 5) {
+    stepContainer.innerHTML = `
+      <h2>Elegí la dirección de tu web</h2>
+      <p class="hint">Así vas a compartir el link con tus invitados.</p>
+      <div class="field">
+        <label>Dirección</label>
+        <div class="slug-row">
+          <span class="slug-prefix">confeti.ai/w/</span>
+          <input id="slugDeseado" placeholder="lucia-y-marco" value="${state.slugDeseado}" style="flex:1; min-width:160px;">
+        </div>
+        <div id="slugStatus"></div>
+      </div>
+    `;
+    const slugInput = document.getElementById('slugDeseado');
+    let debounceTimer;
+    slugInput.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => checkSlug(slugInput.value), 400);
+    });
+    if (state.slugDeseado) checkSlug(state.slugDeseado);
+  }
+}
+
+async function loadThemeOptions() {
+  if (!THEMES.length) {
+    const res = await fetch('/api/themes');
+    const data = await res.json();
+    THEMES = data.themes;
+  }
+  const container = document.getElementById('themeOptions');
+  container.innerHTML = '';
+  THEMES.forEach((t) => {
+    const opt = document.createElement('div');
+    opt.className = 'theme-option' + (state.theme === t.id ? ' selected' : '');
+    opt.innerHTML = `
+      <div class="swatches">${t.swatch.map((c) => `<div class="swatch" style="background:${c}"></div>`).join('')}</div>
+      <h4>${t.label}</h4>
+      <p>${t.description}</p>
+    `;
+    opt.addEventListener('click', () => {
+      state.theme = t.id;
+      loadThemeOptions();
+    });
+    container.appendChild(opt);
+  });
+}
+
+function handleFotos(e) {
+  const files = Array.from(e.target.files).slice(0, 8);
+  state.fotos = files;
+  renderFotosPreview();
+}
+
+function renderFotosPreview() {
+  const preview = document.getElementById('fotosPreview');
+  if (!preview) return;
+  preview.innerHTML = '';
+  state.fotos.forEach((file) => {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    preview.appendChild(img);
+  });
+}
+
+let slugAvailable = false;
+async function checkSlug(value) {
+  const status = document.getElementById('slugStatus');
+  if (!value.trim()) { status.textContent = ''; return; }
+  const res = await fetch('/api/check-slug?slug=' + encodeURIComponent(value));
+  const data = await res.json();
+  state.slugDeseado = data.slug;
+  slugAvailable = data.available;
+  status.className = data.available ? 'ok' : 'taken';
+  status.textContent = data.available
+    ? `Disponible: confeti.ai/w/${data.slug}`
+    : `Esa dirección ya está en uso, probá otra.`;
+}
+
+function collectStepData() {
+  if (currentStep === 1) {
+    state.novio1 = document.getElementById('novio1').value.trim();
+    state.novio2 = document.getElementById('novio2').value.trim();
+    state.fecha = document.getElementById('fecha').value;
+    state.hora = document.getElementById('hora').value || '19:00';
+    state.lugarCeremonia = document.getElementById('lugarCeremonia').value.trim();
+    state.lugarFiesta = document.getElementById('lugarFiesta').value.trim();
+  } else if (currentStep === 2) {
+    state.historiaBullets = document.getElementById('historiaBullets').value.trim();
+  } else if (currentStep === 3) {
+    state.vestimenta = document.getElementById('vestimenta').value.trim();
+    state.alojamiento = document.getElementById('alojamiento').value.trim();
+    state.regalos = document.getElementById('regalos').value.trim();
+    state.rsvpLimite = document.getElementById('rsvpLimite').value;
+  } else if (currentStep === 5) {
+    state.slugDeseado = document.getElementById('slugDeseado').value.trim();
+  }
+}
+
+function validateStep() {
+  if (currentStep === 0 && !state.theme) return 'Elegí un estilo para continuar.';
+  if (currentStep === 1) {
+    if (!state.novio1 || !state.novio2) return 'Completá los dos nombres.';
+    if (!state.fecha) return 'Completá la fecha del casamiento.';
+    if (!state.lugarCeremonia || !state.lugarFiesta) return 'Completá los dos lugares.';
+  }
+  if (currentStep === 2 && !state.historiaBullets) return 'Contanos aunque sea un poco de su historia.';
+  if (currentStep === 5) {
+    if (!state.slugDeseado) return 'Elegí una dirección para tu web.';
+    if (!slugAvailable) return 'Esa dirección ya está en uso, elegí otra.';
+  }
+  return null;
+}
+
+btnBack.addEventListener('click', () => {
+  if (currentStep === 0) return;
+  currentStep--;
+  renderStep();
+});
+
+btnNext.addEventListener('click', async () => {
+  collectStepData();
+  const err = validateStep();
+  if (err) { showError(err); return; }
+  clearError();
+
+  if (currentStep < totalSteps - 1) {
+    currentStep++;
+    renderStep();
+    return;
+  }
+
+  btnNext.disabled = true;
+  btnNext.textContent = 'Generando...';
+  try {
+    const formData = new FormData();
+    Object.entries(state).forEach(([key, value]) => {
+      if (key === 'fotos') return;
+      formData.append(key, value);
+    });
+    state.fotos.forEach((file) => formData.append('fotos', file));
+
+    const res = await fetch('/api/draft', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) {
+      showError(data.error || 'Ocurrió un error, probá de nuevo.');
+      btnNext.disabled = false;
+      btnNext.textContent = 'Ver mi vista previa';
+      return;
+    }
+    window.location.href = '/preview/' + data.draftId;
+  } catch (err) {
+    showError('No se pudo conectar con el servidor.');
+    btnNext.disabled = false;
+    btnNext.textContent = 'Ver mi vista previa';
+  }
+});
+
+renderStep();
+</script>
+
+</body>
+</html>

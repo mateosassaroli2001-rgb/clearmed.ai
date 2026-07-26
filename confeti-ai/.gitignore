@@ -1,0 +1,8 @@
+node_modules/
+.env
+data/drafts/*.json
+data/weddings/*.json
+uploads/*
+!uploads/.gitkeep
+!data/drafts/.gitkeep
+!data/weddings/.gitkeep

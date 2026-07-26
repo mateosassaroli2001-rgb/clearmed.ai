@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confeti — Tu web de casamiento, lista en minutos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Inter:wght@300;400;500;700&display=swap');
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: #0d0b12;
+    color: #f3f0f5;
+    overflow-x: hidden;
+  }
+
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.8s ease, transform 0.8s ease; }
+  .reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+  header.hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    position: relative;
+    padding: 40px 20px;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 20%, rgba(201,146,131,0.35), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 80%, rgba(122,107,199,0.3), transparent 60%),
+      #0d0b12;
+    overflow: hidden;
+  }
+  .confetti-dot {
+    position: absolute; border-radius: 50%; opacity: 0.7;
+    animation: float 10s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-30px) rotate(180deg); }
+  }
+
+  .brand { font-weight: 800; letter-spacing: 0.02em; color: #f3f0f5; font-size: 1.1rem; position: relative; z-index: 2; }
+  .brand span { color: #e2a58f; }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.4rem, 6.5vw, 4.4rem);
+    max-width: 780px; margin: 24px auto 18px; line-height: 1.15;
+    position: relative; z-index: 2;
+  }
+  h1 em { color: #e2a58f; font-style: italic; }
+  header.hero p.sub {
+    color: #c4bdd0; font-size: 1.15rem; max-width: 560px; margin: 0 auto 36px;
+    position: relative; z-index: 2;
+  }
+  .cta-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; position: relative; z-index: 2; }
+  a.cta {
+    background: #e2a58f; color: #2a1a15; padding: 16px 30px; border-radius: 999px;
+    font-weight: 700; text-decoration: none; font-size: 1rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 10px 30px rgba(226,165,143,0.25);
+  }
+  a.cta:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(226,165,143,0.35); }
+  a.cta.secondary { background: transparent; color: #f3f0f5; border: 1.5px solid rgba(255,255,255,0.25); box-shadow: none; }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 40px 20px 100px; }
+  section.block { padding: 100px 0; text-align: center; }
+  section.block h2 {
+    font-family: 'Playfair Display', serif; font-size: clamp(1.8rem, 4vw, 2.6rem); margin-bottom: 16px;
+  }
+  section.block p.lead { color: #c4bdd0; max-width: 560px; margin: 0 auto 50px; font-size: 1.05rem; }
+
+  .themes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; text-align: left; }
+  .theme-card {
+    background: #17131d; border-radius: 20px; padding: 28px; border: 1px solid rgba(255,255,255,0.08);
+    transition: transform 0.25s ease, border-color 0.25s ease;
+  }
+  .theme-card:hover { transform: translateY(-6px); border-color: rgba(226,165,143,0.4); }
+  .swatches { display: flex; gap: 8px; margin-bottom: 18px; }
+  .swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.15); }
+  .theme-card h3 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin: 0 0 8px; }
+  .theme-card p { color: #a89fb3; margin: 0; line-height: 1.5; font-size: 0.95rem; }
+
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; text-align: left; }
+  .step { background: #17131d; border-radius: 20px; padding: 30px; border: 1px solid rgba(255,255,255,0.08); }
+  .step .step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 38px; height: 38px; border-radius: 50%; background: #e2a58f; color: #2a1a15;
+    font-weight: 800; margin-bottom: 16px;
+  }
+  .step h3 { margin: 0 0 8px; font-size: 1.1rem; }
+  .step p { margin: 0; color: #a89fb3; font-size: 0.92rem; line-height: 1.5; }
+
+  .pricing-card {
+    max-width: 420px; margin: 0 auto; background: linear-gradient(160deg, #221a2a, #17131d);
+    border-radius: 24px; padding: 46px 36px; border: 1px solid rgba(226,165,143,0.3);
+  }
+  .pricing-card .price { font-family: 'Playfair Display', serif; font-size: 3rem; margin: 10px 0 6px; }
+  .pricing-card .price span { font-size: 1.1rem; color: #a89fb3; font-family: 'Inter', sans-serif; }
+  .pricing-card ul { list-style: none; padding: 0; margin: 26px 0; text-align: left; color: #c4bdd0; }
+  .pricing-card li { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .pricing-card li::before { content: '✓ '; color: #e2a58f; font-weight: 700; }
+
+  footer.site-footer { text-align: center; padding: 40px 20px; color: #6f6779; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<header class="hero" id="topHero">
+  <div class="brand">✦ Confeti</div>
+  <h1>Tu web de casamiento, <em>hecha para impresionar</em>, lista en minutos</h1>
+  <p class="sub">Elegí un estilo, contanos su historia, y Confeti arma una web animada e interactiva para compartir con todos tus invitados — con confirmación de asistencia incluida.</p>
+  <div class="cta-row">
+    <a class="cta" href="/crear.html">Crear mi web</a>
+    <a class="cta secondary" href="#estilos">Ver estilos</a>
+  </div>
+</header>
+
+<main>
+  <section class="block" id="estilos">
+    <h2 class="reveal">Elegí el estilo de tu web</h2>
+    <p class="lead reveal">Tres estilos, cada uno pensado y animado a mano. Vos ponés los datos, nosotros el diseño.</p>
+    <div class="themes-grid" id="themesGrid">Cargando estilos...</div>
+  </section>
+
+  <section class="block">
+    <h2 class="reveal">¿Cómo funciona?</h2>
+    <p class="lead reveal">Sin instalar nada, sin tocar código.</p>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">1</div>
+        <h3>Elegís tu estilo</h3>
+        <p>Romántico, moderno o boho — el que más se parezca a ustedes.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">2</div>
+        <h3>Contás los detalles</h3>
+        <p>Nombres, fecha, lugar, cómo se conocieron y las fotos que quieran mostrar.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">3</div>
+        <h3>Vas la vista previa</h3>
+        <p>Confeti arma la web al instante con animaciones y cuenta regresiva. La ves antes de pagar nada.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">4</div>
+        <h3>Publicás y compartís</h3>
+        <p>Tu web queda online con su propio link, lista para mandar por WhatsApp. Vos ves quién confirmó, en vivo.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="precio">
+    <h2 class="reveal">Un solo pago, sin suscripciones</h2>
+    <div class="pricing-card reveal">
+      <p style="color:#a89fb3; margin:0; text-transform:uppercase; letter-spacing:0.1em; font-size:0.8rem;">Web completa</p>
+      <div class="price" id="priceDisplay">$--<span> / única vez</span></div>
+      <ul>
+        <li>Diseño animado a elección, personalizado con IA</li>
+        <li>Link propio para compartir con todos tus invitados</li>
+        <li>Formulario de confirmación (RSVP) con panel privado</li>
+        <li>Galería de fotos y cuenta regresiva</li>
+      </ul>
+      <a class="cta" href="/crear.html" style="display:block; text-align:center;">Empezar ahora</a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">✦ Confeti — hecho con cariño para el día más importante.</footer>
+
+<script>
+  // Puntos de confeti flotando en el hero
+  const hero = document.getElementById('topHero');
+  const colors = ['#e2a58f', '#7a6bc7', '#f3d68a', '#f3f0f5'];
+  for (let i = 0; i < 18; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'confetti-dot';
+    const size = 4 + Math.random() * 8;
+    dot.style.width = size + 'px';
+    dot.style.height = size + 'px';
+    dot.style.left = Math.random() * 100 + '%';
+    dot.style.top = Math.random() * 100 + '%';
+    dot.style.background = colors[i % colors.length];
+    dot.style.animationDelay = (Math.random() * 6) + 's';
+    dot.style.animationDuration = (7 + Math.random() * 6) + 's';
+    hero.appendChild(dot);
+  }
+
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  revealEls.forEach((el) => observer.observe(el));
+
+  async function loadThemes() {
+    try {
+      const res = await fetch('/api/themes');
+      const data = await res.json();
+      const grid = document.getElementById('themesGrid');
+      grid.innerHTML = '';
+      data.themes.forEach((t) => {
+        const card = document.createElement('div');
+        card.className = 'theme-card reveal';
+        card.innerHTML = `
+          <div class="swatches">${t.swatch.map((c) => `<div class="swatch" style="background:${c}"></div>`).join('')}</div>
+          <h3>${t.label}</h3>
+          <p>${t.description}</p>
+        `;
+        grid.appendChild(card);
+        observer.observe(card);
+      });
+      document.getElementById('priceDisplay').innerHTML =
+        '$' + (data.priceUsdCents / 100).toFixed(0) + '<span> USD / única vez</span>';
+    } catch (err) {
+      document.getElementById('themesGrid').textContent = 'No se pudieron cargar los estilos.';
+    }
+  }
+  loadThemes();
+</script>
+
+</body>
+</html>
