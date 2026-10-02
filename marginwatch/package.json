@@ -1,0 +1,43 @@
+{
+  "name": "marginwatch",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MarginWatch — revisá cómo cambian tus costos y márgenes a partir de facturas de proveedores (versión local).",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false --exclude 'src/client/**' src/server/index.ts",
+    "build": "vite build",
+    "start": "vite build && tsx src/server/index.ts --production",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "sample:pdf": "tsx scripts/make-sample-invoice.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "decimal.js": "^10.6.0",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "multer": "^2.4.0",
+    "papaparse": "^5.7.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tsx": "^4.23.15",
+    "vite": "^8.3.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.3.0",
+    "@types/node": "^26.6.4",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "pdf-lib": "^1.17.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

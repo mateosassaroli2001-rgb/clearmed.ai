@@ -1,5 +1,7 @@
 # ✦ ClearMed AI
 
+> Este repositorio también contiene **MarginWatch** (app local para comerciantes de Shopify) en la carpeta [`marginwatch/`](marginwatch/README.md).
+
 Analizá estudios médicos con IA y obtené explicaciones en lenguaje simple.
 
 ---

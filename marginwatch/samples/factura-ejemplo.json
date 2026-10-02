@@ -1,0 +1,84 @@
+{
+  "proveedor": "Distribuidora Ficticia del Sur S.A.",
+  "numero_factura": "A-0001-00004567",
+  "fecha": "2026-09-28",
+  "moneda": "ARS",
+  "importes_incluyen_impuestos": false,
+  "tasa_impuesto_pct": "21",
+  "descuento_general_pct": null,
+  "lineas": [
+    {
+      "texto_original": "YERBA-500 | Yerba mate suave 500 g | Caja x 10 u | 2 | $ 28.000,00 | $ 56.000,00",
+      "descripcion": "Yerba mate suave 500 g",
+      "codigo": "YERBA-500",
+      "cantidad": "2",
+      "presentacion": "Caja x 10 u",
+      "precio_unitario": "28000.00",
+      "importe": "56000.00",
+      "descuento_pct": null
+    },
+    {
+      "texto_original": "PRV-8812 | Café molido intenso 250 g | Pack x 6 | 1 | $ 27.000,00 | $ 27.000,00",
+      "descripcion": "Café molido intenso 250 g",
+      "codigo": "PRV-8812",
+      "cantidad": "1",
+      "presentacion": "Pack x 6",
+      "precio_unitario": "27000.00",
+      "importe": "27000.00",
+      "descuento_pct": null
+    },
+    {
+      "texto_original": "PRV-3301 | Taza cerámica 300 ml | Unidad | 12 | $ 3.100,00 | $ 37.200,00",
+      "descripcion": "Taza cerámica 300 ml",
+      "codigo": "PRV-3301",
+      "cantidad": "12",
+      "presentacion": "Unidad",
+      "precio_unitario": "3100.00",
+      "importe": "37200.00",
+      "descuento_pct": null
+    },
+    {
+      "texto_original": "PRV-4410 | Bombilla acero inox | Caja | 1 | $ 36.000,00 | $ 36.000,00",
+      "descripcion": "Bombilla acero inox",
+      "codigo": "PRV-4410",
+      "cantidad": "1",
+      "presentacion": "Caja",
+      "precio_unitario": "36000.00",
+      "importe": "36000.00",
+      "descuento_pct": null
+    },
+    {
+      "texto_original": "TERMO-1L | Termo de acero 1 L | Unidad | 4 | $ 21.000,00 | Desc. 10% | $ 75.600,00",
+      "descripcion": "Termo de acero 1 L",
+      "codigo": "TERMO-1L",
+      "cantidad": "4",
+      "presentacion": "Unidad",
+      "precio_unitario": "21000.00",
+      "importe": "75600.00",
+      "descuento_pct": "10"
+    },
+    {
+      "texto_original": "PRV-7001 | Molinillo manual para café | Unidad | 2 | $ 25.000,00 | $ 50.000,00",
+      "descripcion": "Molinillo manual para café",
+      "codigo": "PRV-7001",
+      "cantidad": "2",
+      "presentacion": "Unidad",
+      "precio_unitario": "25000.00",
+      "importe": "50000.00",
+      "descuento_pct": null
+    },
+    {
+      "texto_original": "FLETE | Flete y envío | 1 | $ 8.000,00 | $ 8.000,00",
+      "descripcion": "Flete y envío",
+      "codigo": "FLETE",
+      "cantidad": "1",
+      "presentacion": null,
+      "precio_unitario": "8000.00",
+      "importe": "8000.00",
+      "descuento_pct": null
+    }
+  ],
+  "observaciones": [
+    "Subtotal neto $ 289.800,00 · IVA 21 % $ 60.858,00 · Total $ 350.658,00"
+  ]
+}

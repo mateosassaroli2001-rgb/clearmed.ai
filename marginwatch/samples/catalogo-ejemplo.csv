@@ -1,0 +1,10 @@
+sku,nombre,variante,costo_unitario,precio_venta,moneda
+YERBA-500,Yerba mate suave,500 g,2500,4200,ARS
+CAFE-250,Café molido intenso,250 g,4000,6900,ARS
+TAZA-300-BL,Taza de cerámica,Blanca 300 ml,2900,5500,ARS
+TAZA-300-NG,Taza de cerámica,Negra 300 ml,2900,5500,ARS
+BOMB-INOX,Bombilla de acero inoxidable,,1500,3200,ARS
+TERMO-1L,Termo de acero,1 L,17500,32000,ARS
+MOL-MAN,Molinillo de café manual,,18,35,USD
+MATE-CAL,Mate de calabaza,Natural,3800,7500,ARS
+FILTRO-102,Filtros de papel para café,N° 102 x 100,1200,2400,ARS
