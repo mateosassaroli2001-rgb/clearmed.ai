@@ -20,6 +20,10 @@ cambiaron tus **costos** y tu **margen bruto estimado**. También calcula el pre
 3. Abrí en el navegador: **<http://localhost:3000>**
 4. Para cerrarla, volvé a la terminal y apretá `Ctrl + C`. Tus datos quedan guardados en la carpeta `data/`.
 
+**En Windows:** usá «Símbolo del sistema» (`cmd`) en vez de PowerShell. Si PowerShell muestra «la ejecución de
+scripts está deshabilitada», es por esa razón. Para abrir `cmd` en la carpeta, escribí `cmd` en la barra de direcciones
+del Explorador de archivos y apretá Enter.
+
 ### Probar el recorrido completo sin nada propio
 
 1. **Catálogo** → «Usar catálogo de ejemplo» y elegí «sin impuestos (neto)».
